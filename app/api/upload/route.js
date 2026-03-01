@@ -1,8 +1,9 @@
-import { storeReport } from '@/lib/db'
+import { storeReport, logActivity } from '@/lib/db'
 import { extractTextFromImage } from '@/lib/openai'
 
 export async function POST(request) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const formData = await request.formData()
     const file = formData.get('file')
     const userId = formData.get('userId')
@@ -35,6 +36,7 @@ export async function POST(request) {
       reportText
     })
 
+    logActivity(ip, 'upload', `file: ${fileName}, userId: ${userId}`)
     return Response.json({ report })
   } catch (error) {
     console.error('Upload error:', error)

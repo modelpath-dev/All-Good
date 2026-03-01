@@ -1,8 +1,9 @@
-import { getReports, getReportById } from '@/lib/db'
+import { getReports, getReportById, logActivity } from '@/lib/db'
 import { chatWithReport } from '@/lib/openai'
 
 export async function POST(request) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const { message, userId, reportId, history } = await request.json()
 
     if (!message || !userId) {
@@ -27,6 +28,7 @@ export async function POST(request) {
     }
 
     const reply = await chatWithReport(message, reportContext, history || [])
+    logActivity(ip, 'chat', `msg: ${message.slice(0, 100)}, userId: ${userId}`)
     return Response.json({ reply })
   } catch (error) {
     console.error('Chat error:', error)

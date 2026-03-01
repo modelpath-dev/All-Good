@@ -1,8 +1,9 @@
-import { getReportById } from '@/lib/db'
+import { getReportById, logActivity } from '@/lib/db'
 import { compareReports } from '@/lib/openai'
 
 export async function POST(request) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const { reportIdA, reportIdB } = await request.json()
 
     if (!reportIdA || !reportIdB) {
@@ -24,6 +25,7 @@ export async function POST(request) {
 
     const comparison = await compareReports(reportA.analysis, reportB.analysis)
 
+    logActivity(ip, 'compare', `reports: ${reportA.file_name} vs ${reportB.file_name}`)
     return Response.json({ comparison, reportA, reportB })
   } catch (error) {
     console.error('Compare error:', error)
